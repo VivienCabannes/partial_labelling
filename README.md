@@ -7,6 +7,9 @@ Most of the code is based on the following python libraries:
  - numpy
  - numba
  - matplotlib
+ 
+To run experiments, look at the notebooks folder, that is based on:
+ - jupyter-notebook
 
 For ranking, we used the following lp solver library:
  - cplex
