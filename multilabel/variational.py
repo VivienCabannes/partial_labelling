@@ -47,4 +47,13 @@ class IL:
         for i in range(n):
             for j in range(m):
                 pred[i, sort_pred[i, j]] = True
-                
+
+
+class AC(IL):
+    def __init__(self):
+        super(AC, self).__init__(self)
+
+
+class SP(IL):
+    def __init__(self):
+        super(SP, self).__init__(self)
