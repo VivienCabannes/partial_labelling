@@ -22,9 +22,13 @@ class IRSynthesizer:
         y_test = self.f(x_test)
         return x_test, y_test
 
-    def synthetic_corruption(self, labels, corruption):
+    def synthetic_corruption(self, labels, corruption, skewed=False):
         exp_par, offset = corruption
         r_train = abs(offset) - np.log(np.random.rand(self.n_train)) / exp_par
-        mu = (2 * np.random.rand(self.n_train) - 1) * r_train
-        c_train = labels + mu
-        return c_train[:, np.newaxis], r_train
+        if skewed:
+            mu = np.random.rand(self.n_train) * r_train
+            c_train = labels + np.abs(mu)[:, np.newaxis] * np.sign(labels)
+        else:
+            mu = (2 * np.random.rand(self.n_train) - 1) * r_train
+            c_train = labels + mu[:, np.newaxis]        
+        return c_train, r_train
