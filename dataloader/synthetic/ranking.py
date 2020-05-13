@@ -3,6 +3,7 @@ import numba
 import numpy as np
 
 
+# See ranking.fassolver.embedding.canonical_map
 @numba.jit("i8[:, :](i8)", nopython=True)
 def canonical_map(m):
     ind_map = np.full((m, m), m**2, dtype=np.int64)
@@ -50,12 +51,27 @@ class RKSynthesizer:
         y_test = self.f(x_test, verbose=verbose)
         return x_test, y_test
 
-    @staticmethod
-    def synthetic_corruption(y_train, corruption_rate):
-        S_train = y_train.copy()
-        S_train[np.random.rand(*S_train.shape) < corruption_rate] = 0
-        return S_train
+#     @staticmethod
+#     def synthetic_corruption(y_train, corruption_rate):
+#         S_train = y_train.copy()
+#         S_train[np.random.rand(*S_train.shape) < corruption_rate] = 0
+#         return S_train
 
+    def synthetic_corruption(self, y_train, corruption_rate, skewed=False, y_score=None):
+        S_train = y_train.copy()
+        if not skewed:
+            S_train[np.random.rand(*S_train.shape) < corruption_rate] = 0
+        else:
+            dist = np.empty(S_train.shape)
+            self.fill_distance(dist, y_score, self.ind_map)
+            np.abs(dist, out=dist)
+            dist /= np.max(dist, axis=1)[:, np.newaxis]
+            ind_lost = dist > 1 - corruption_rate
+#             ind_lost = dist < corruption_rate
+            S_train[ind_lost] = 0
+        return S_train
+    
+    
     @staticmethod
     @numba.jit("(f8[:, :], f8[:, :], i8[:, :])", nopython=True)
     def fill_y(y_train, y_score, ind_map):
@@ -64,3 +80,12 @@ class RKSynthesizer:
             for i in range(j):
                 ind = ind_map[i, j]
                 y_train[:,ind] = 2 * (y_score[i] > y_score[j]) - 1
+
+    @staticmethod
+    @numba.jit("(f8[:, :], f8[:, :], i8[:, :])", nopython=True)
+    def fill_distance(dist, y_score, ind_map):
+        m = len(ind_map)
+        for j in range(m):
+            for i in range(j):
+                ind = ind_map[i, j]
+                dist[:,ind] = y_score[i] - y_score[j]

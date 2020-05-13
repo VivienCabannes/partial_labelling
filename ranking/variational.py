@@ -9,19 +9,15 @@ class IL:
         self.solver = fas_solver
         self.is_ilp = type(fas_solver) == IlpSolver
 
-    def train(self, x_train, S_train, lambd, K_inv=None):
-
-        if K_inv is None:
-            n_train = len(S_train)
-            self.kernel.set_support(x_train)
-            K = self.kernel.get_k()
-            w, v = np.linalg.eigh(K)
-            w += n_train * lambd
-            w **= -1
-            self.K_inv = (v * w) @ v.T
-            self.K_inv *= -1
-        else:
-            self.K_inv = K_inv
+    def train(self, x_train, S_train, lambd):
+        n_train = len(S_train)
+        self.kernel.set_support(x_train)
+        K = self.kernel.get_k()
+        w, v = np.linalg.eigh(K)
+        w += n_train * lambd
+        w **= -1
+        self.K_inv = (v * w) @ v.T
+        self.K_inv *= -1
         
         self.phi_init = S_train.astype(np.float)
         self.const = self.phi_init
@@ -29,13 +25,16 @@ class IL:
     def __call__(self, x, tol=1e-3, solver=None, verbose=False):
         if solver is None:
             solver = self.solver
-        K_x = self.kernel(x).T
-        alpha = K_x @ self.K_inv            
+        alpha = self.kernel(x).T @ self.K_inv
         
         pred = np.empty((len(x), self.phi_init.shape[-1]), dtype=np.float)
         phi_pl = np.empty(self.phi_init.shape, dtype=np.float)
         
         for i in range(len(pred)):
+            # To stabilize CPLEX
+            alpha[i] /= alpha[i].max()
+            alpha[i] *= 1e5
+            # ------------------
             self.solve(alpha[i], pred[i], phi_pl, tol, solver)
             if verbose and not (100 * i) % len(x):
                 print(i, end=", ")
@@ -107,41 +106,18 @@ class AC:
         self.is_ilp = type(fas_solver) == IlpSolver
 
     def train(self, x_train, S_train, lambd, num=1, K_inv=None):
-        phi = np.empty(S_train.shape)
-        tmp = np.empty((num, S_train.shape[1]))
-        for i in range(len(phi)):
-            tmp[:] = 0
-            ctl = num
-            for j in range(num):
-                c = np.random.randn(S_train.shape[1])
-                if self.is_ilp:
-                    self.solver.set_constraints(S_train[i])
-                    self.solver.set_objective(c)
-                    tmp[j] = self.solver.solve()
-                else:
-                    tmp[j] += self.solver.solve_const(c, S_train[i])
-                if j:
-                    if (tmp[:j] == tmp[j]).mean(axis=1).max() == 1:
-                        tmp[j] = 0
-                        ctl -= 1
-            phi[i] = tmp.sum(axis=0) / ctl        
-    
-        if self.is_ilp:
-            self.solver.reset_constraints()
-
-        if K_inv is None:        
-            n_train = len(x_train)
-            self.kernel.set_support(x_train)
-            K_lambda = self.kernel.get_k()
-            K_lambda += lambd * n_train * np.eye(n_train)
-            self.beta = np.linalg.solve(K_lambda, phi)
-            self.beta *= -1
-        else:
-            self.beta = K_inv @ phi
+        phi = self.get_center(S_train, num, self.solver)
+        
+#         beta = K_inv @ phi
+        n_train = len(x_train)
+        self.kernel.set_support(x_train)
+        K_lambda = self.kernel.get_k()
+        K_lambda += lambd * n_train * np.eye(n_train)
+        self.beta = np.linalg.solve(K_lambda, phi)
+        self.beta *= -1
         
     def __call__(self, x, verbose=False):
-        K_x = self.kernel(x).T
-        c = K_x @ self.beta
+        c = self.kernel(x).T @ self.beta
         pred = np.empty(c.shape, dtype=np.float)
         for i in range(len(x)):
             if self.is_ilp:
@@ -152,6 +128,34 @@ class AC:
             if verbose and not (100 * i) % len(x):
                 print(i, end=", ")
         return pred
+    
+    @staticmethod
+    def get_center(S_train, num, solver):
+        is_ilp = type(solver) == IlpSolver
+        
+        phi = np.empty(S_train.shape)
+        tmp = np.empty((num, S_train.shape[1]))
+        for i in range(len(phi)):
+            tmp[:] = 0
+            ctl = num
+            for j in range(num):
+                c = np.random.randn(S_train.shape[1])
+                if is_ilp:
+                    solver.set_constraints(S_train[i])
+                    solver.set_objective(c)
+                    tmp[j] = solver.solve()
+                else:
+                    tmp[j] += solver.solve_const(c, S_train[i])
+                if j:
+                    if (tmp[:j] == tmp[j]).mean(axis=1).max() == 1:
+                        tmp[j] = 0
+                        ctl -= 1
+            phi[i] = tmp.sum(axis=0) / ctl        
+    
+        if is_ilp:
+            solver.reset_constraints()
+            
+        return phi
 
 
 class SP:

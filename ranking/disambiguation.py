@@ -34,6 +34,10 @@ class DF:
         out *= -1
         for i in range(len(x)):
             if self.is_ilp:
+                # To stabilize CPLEX
+                out[i] /= out[i].max()
+                out[i] *= 1e5
+                # ------------------
                 self.solver.set_objective(out[i])
                 out[i] = self.solver.solve()
             else:
@@ -50,7 +54,7 @@ class DF:
 
         z = np.zeros(y_train.shape)
         z_old = np.ones(y_train.shape)
-        while not np.abs(z - z_old).max() > 1e-3:
+        while np.abs(z - z_old).max() > threshold:
             z_old[:] = z[:]
 
             # Minimization over z
