@@ -22,12 +22,10 @@ class DF:
         
         if quadratic:
             alpha = alpha.T @ alpha
-            y_train = self.quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver)
+            self.y_train = self.quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver)
         else:
-            y_train = self.disambiguation(alpha, S_train, threshold, solver)
-
-        self.beta = v / (w + n_train * lambd) @ (v.T @ y_train)
-        self.y_train = y_train
+            self.y_train = self.disambiguation(alpha, S_train, threshold, solver)
+        self.beta = v / (w + n_train * lambd) @ (v.T @ self.y_train)
         
     def __call__(self, x, verbose=False):
         out = self.kernel(x).T @ self.beta
