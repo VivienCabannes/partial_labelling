@@ -47,13 +47,18 @@ class DF:
 
             np.matmul(alpha, y_train, out=z)
             idx = np.argsort(z, axis=1)[:, -k:]
+            z[:] = -1
             cls.fill_topk_pred(z, idx)
 
             np.matmul(alpha, z, out=y_train)
             np.sign(y_train, out=y_train)
             y_train[const_idx] = value
-#             y_train[const_idx] = 0
-#             y_train += S_train
+
+#             y_train[S_train == 1] = np.max(y_train) + 1
+#             idx = np.argsort(y_train, axis=1)[:, -k:]
+#             y_train[:] = 0
+#             cls.fill_topk_pred(y_train, idx)
+#             y_train[const_idx] = value
 
         return y_train
 
