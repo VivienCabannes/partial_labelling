@@ -2,7 +2,7 @@
 import numpy as np
 from .fassolver import IlpSolver
 
-    
+
 class DF:
     def __init__(self, kernel, fas_solver):
         self.kernel = kernel
@@ -19,14 +19,14 @@ class DF:
         w, v = np.linalg.eigh(K)
         w_reg = w / (w + n_train * lambd)
         alpha = (w_reg * v) @ v.T
-        
+
         if quadratic:
             alpha = alpha.T @ alpha
             self.y_train = self.quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver)
         else:
             self.y_train = self.disambiguation(alpha, S_train, threshold, solver)
         self.beta = v / (w + n_train * lambd) @ (v.T @ self.y_train)
-        
+
     def __call__(self, x, verbose=False):
         out = self.kernel(x).T @ self.beta
         out *= -1
@@ -43,7 +43,7 @@ class DF:
             if verbose and not (100 * i) % len(x):
                 print(i, end=", ")
         return out
-    
+
     @staticmethod
     def disambiguation(alpha, S_train, threshold, solver):
         is_ilp = type(solver) == IlpSolver
@@ -75,13 +75,12 @@ class DF:
                     y_train[j] = solver.solve()
                 else:
                     solver.solve_const_out(y_train[j], const[j], y_train[j])
-    
+
             if is_ilp:
                 solver.reset_constraints()
 
         return y_train
-        
-    @staticmethod
+
     def quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver):
         is_ilp = type(solver) == IlpSolver
         y_train = S_train.astype(np.float)
@@ -89,7 +88,7 @@ class DF:
 
 #         alpha -= np.eye(n_train)
         if method.lower() == 'bw':
-            # Blockwise Frank-Wolfe    
+            # Blockwise Frank-Wolfe
             n_train = len(y_train)
             for t in range(nb_epochs):
                 i = np.random.randint(n_train)
@@ -103,7 +102,7 @@ class DF:
 
                 y_train[i] *= t / (2*n_train + t)
                 y_train[i] += (2*n_train / (2*n_train + t)) * dir_bw
-    
+
         else:
             # Frank-Wolfe
             for t in range(nb_epochs):
@@ -120,7 +119,7 @@ class DF:
                 dir_fw -= y_train
                 dir_fw *= 2 / (t + 2)
                 y_train += dir_fw
-    
+
         if is_ilp:
-            solver.reset_constraints()            
+            solver.reset_constraints()
         return y_train

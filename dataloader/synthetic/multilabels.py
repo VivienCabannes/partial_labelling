@@ -3,8 +3,8 @@ import numpy as np
 
 
 class MLSynthesizer:
-    nb_class = 4
-#     nb_class = 6
+#     nb_class = 4
+    nb_class = 6
 
     def __init__(self, n_train):
         self.n_train = n_train
@@ -12,20 +12,20 @@ class MLSynthesizer:
     def f(self, x):
         if len(x.shape) < 2:
             x = x[np.newaxis, :]
-        y = -np.ones((x.shape[0], self.nb_class), dtype=np.float)
-        y[:, 0] = x[:, 0] < 1
-        y[:, 1] = x[:, 0] > 2
-        y[:, 2] = x[:, 1] < 1
-        y[:, 3] = x[:, 1] > 2
+        y = np.zeros((x.shape[0], self.nb_class), dtype=np.bool_)
 #         y[:, 0] = x[:, 0] < 1
-#         y[:, 1] = x[:, 0] >= 1
-#         y[:, 1] &= x[:, 0] <= 2
-#         y[:, 2] = x[:, 0] > 2
-#         y[:, 3] = x[:, 1] < 1
-#         y[:, 4] = x[:, 1] >= 1
-#         y[:, 4] &= x[:, 1] <= 2
-#         y[:, 5] = x[:, 1] > 2
-        return y
+#         y[:, 1] = x[:, 0] > 2
+#         y[:, 2] = x[:, 1] < 1
+#         y[:, 3] = x[:, 1] > 2
+        y[:, 0] = x[:, 0] < 1
+        y[:, 1] = x[:, 0] >= 1
+        y[:, 1] &= x[:, 0] <= 2
+        y[:, 2] = x[:, 0] > 2
+        y[:, 3] = x[:, 1] < 1
+        y[:, 4] = x[:, 1] >= 1
+        y[:, 4] &= x[:, 1] <= 2
+        y[:, 5] = x[:, 1] > 2
+        return 2 * y.astype(np.float) - 1
 
     def get_trainset(self):
         x_train = 3 * np.random.rand(self.n_train, 2)
