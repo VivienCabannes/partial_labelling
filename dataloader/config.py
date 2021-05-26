@@ -3,6 +3,7 @@ import pathlib
 
 # Paths to be change by user
 data_dir = pathlib.Path.home() / 'data'
+# data_dir = pathlib.Path('/sequoia/data1/vcabanne/data')
 LIBSVM_DIR = data_dir / 'classification'
 MULAN_DIR = data_dir / 'multilabel'
 

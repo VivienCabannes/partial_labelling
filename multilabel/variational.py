@@ -4,8 +4,9 @@ import numpy as np
 
 
 class IL:
-    def __init__(self, kernel):
+    def __init__(self, kernel, k):
         self.kernel = kernel
+        self.k = k
 
     def train(self, x_train, S_train, lambd):
         """
@@ -25,26 +26,26 @@ class IL:
 
     def __call__(self, x):
         K_x = self.kernel(x).T
-        return K_x @ self.beta
-    
-    def thres_pred(self, x, threshold):
-        pred = self(x)
-        pred -= threshold
-        np.sign(pred, out=pred)
-        return pred
-    
-    def topk_pred(self, x, k):
-        soft_pred = self(x)
-        sort_pred = np.argsort(soft_pred, axis=1)[:, -k:]
-        pred = np.zeros(soft_pred.shape, dtype=np.bool_)
-        self.fill_topk_pred(pred, sort_pred)
-        return pred
-       
+        pred = K_x @ self.beta
+        idx = np.argsort(pred, axis=1)[:, -self.k:]
+        pred[:] = -1
+        self.fill_topk_pred(pred, idx)
+        return pred    
+
     @staticmethod
-    @numba.jit("(b1[:,:], i8[:,:])", nopython=True)
-    def fill_topk_pred(pred, sort_pred):
-        n, m = sort_pred.shape
+    @numba.jit("(f8[:,:], i8[:,:])", nopython=True)
+    def fill_topk_pred(pred, idx):
+        n, k = idx.shape
         for i in range(n):
-            for j in range(m):
-                pred[i, sort_pred[i, j]] = True
-                
+            for j in range(k):
+                pred[i, idx[i, j]] = 1
+
+
+class AC(IL):
+    def __init__(self):
+        super(AC, self).__init__(self)
+
+
+class SP(IL):
+    def __init__(self):
+        super(SP, self).__init__(self)

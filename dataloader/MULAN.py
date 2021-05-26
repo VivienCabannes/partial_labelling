@@ -62,7 +62,9 @@ class MULANLoader(DataLoader):
         data = data.astype(np.float64).toarray()
         if self.name[:7] in ["nuswide", "genbase"]:
             data = data[:, 1:].astype(np.float64)
-        labels = labels.toarray().view(np.bool_)
+        labels = labels.toarray().astype(np.float64)
+        labels *= 2
+        labels -= 1
         return data, labels
 
     def read_trainset(self):
@@ -74,10 +76,13 @@ class MULANLoader(DataLoader):
         return self.read_data(path)
 
     @staticmethod
-    def synthetic_corruption(y_train, corruption):
-        S_train = y_train.astype(np.float64)
-        S_train *= np.random.rand(*S_train.shape)
-        S_train = S_train > corruption
+    def synthetic_corruption(y_train, corruption, skewed=True):
+        if skewed:
+            S_train = (y_train + 1) / 2
+        else:
+            S_train = y_train.copy()
+        ind = np.random.rand(*S_train.shape) < corruption
+        S_train[ind] = 0
         return S_train
 
     # MULAN specific methods
