@@ -3,23 +3,46 @@ import numpy as np
 
 
 class NearestNeighbors:
+    """Regression weights given by nearest neighbors
+
+    Attributes
+    ----------
+    x: ndarray
+        Training data of shape (nb_points, input_dim)
+
+    Examples
+    --------
+    >>>> import numpy as np
+    >>>> nn = NearestNeighbors(k=20)
+    >>>> x_support = np.random.randn(50, 10)
+    >>>> nn.set_support(x_support)
+    >>>> x = np.random.randn(30, 10)
+    >>>> alpha = nn(x)
+    """
+
     def __init__(self, k):
+        """
+
+        Parameters
+        ----------
+        k: int
+            Number of neighbors to consider
+        """
+
         self.k = k
-        
-    def set_support(self, x, subsample_rate=0):
+
+    def set_support(self, x):
         """Set train support for nearest neighbors method.
 
         Parameters
         ----------
         x : ndarray
             Training set given as a design matrix, of shape (nb_points, input_dim).
-        subsample_rate : float, optional, default to 0
-            Subsampling rate to compute kernel methods on a subsets of points.
         """
-        self.ind = np.random.rand(x.shape[0]) >= subsample_rate
-        self.x = x[self.ind].T
+
+        self.x = x.T
         self.norm = np.sum(x**2, axis=1)[np.newaxis,:]
-        
+
     def __call__(self, x):
         """Neighbor computation.
 
@@ -31,8 +54,10 @@ class NearestNeighbors:
         Returns
         -------
         out : ndarray
-            similarity matrix alpha(x, x_support).
-        """                
+            Similarity matrix alpha[i,j] = 1 if the train point self.x[j] is among the k nearest
+            neighbors of the test point x[j].
+        """
+
         dist = x @ self.x
         dist *= -2
         norm = np.sum(x**2, axis=1)
@@ -40,3 +65,12 @@ class NearestNeighbors:
         dist += self.norm
         alpha = dist < np.partition(dist, self.k)[:, self.k:self.k+1]
         return alpha.astype(np.float)
+
+
+if __name__=="__main__":
+    nn = NearestNeighbors(k=20)
+    x_support = np.random.randn(50, 10)
+    nn.set_support(x_support)
+    x = np.random.randn(30, 10)
+    alpha = nn(x)
+    assert(alpha.shape==(30,50))

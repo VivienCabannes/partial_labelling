@@ -1,4 +1,3 @@
 
-from .kernel_computer import KernelComputer
-from .kernel_regressor import KernelRegressor
+from .ridge_regression import Kernel, RidgeRegressor
 from .nearest_neighbors import NearestNeighbors
