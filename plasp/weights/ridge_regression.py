@@ -6,8 +6,6 @@ class RidgeRegressor:
     """
     Regression weights of kernel Ridge regression
 
-    Useful to try several regularization parameter
-    Based on linked between Tikhonov regularization and GSVD
 
     Examples
     --------
@@ -15,7 +13,7 @@ class RidgeRegressor:
     >>>> kernel_computer = Kernel('Gaussian', sigma=3)
     >>>> krr = RidgeRegressor(kernel_computer, lambd=1e-3)
     >>>> x_support = np.random.randn(50, 10)
-    >>>> krr.set_support(x_support, subsample_rate=.1)
+    >>>> krr.set_support(x_support)
     >>>> x = np.random.randn(30, 10)
     >>>> alpha = krr(x)
     """
@@ -23,27 +21,31 @@ class RidgeRegressor:
         self.kernel = kernel
         self.lambd = lambd
 
-    def set_support(self, x_train, subsample_rate=0):
-        """Specified input training data"""
-        self.x_train = x_train
-        self.ind = np.random.rand(x_train.shape[0]) >= subsample_rate
-        self.x_train = x_train[self.ind]
-        self.n_train = len(x_train)
-        self.kernel.set_support(self.x_train, subsample_rate)
+    def set_support(self, x_train):
+        """Specified input training data
 
-    def update_sigma(self, sigma=None, subsample_rate=0):
+        There should be a call to update the EVD of K and lambda after.
+        """
+        self.n_train = len(x_train)
+        self.kernel.set_support(x_train)
+
+    def update_sigma(self, sigma=None):
         """Setting bandwith parameter
 
-        There should be a call to update lambda after setting the bandwith
+        Useful to try several regularization parameter.
+        There should be a call to update lambda after setting the bandwith.
         """
         if sigma is not None:
             self.kernel.__init__(self.kernel.kernel, sigma=sigma)
-            self.kernel.set_support(self.x_train, subsample_rate=0)
+            self.kernel.set_support(self.kernel.x)
         K = self.kernel.get_k()
         self.w_0, self.v = np.linalg.eigh(K)
 
     def update_lambda(self, lambd=None):
-        """Setting Tikhonov regularization parameter"""
+        """Setting Tikhonov regularization parameter
+
+        Useful to try several regularization parameter.
+        """
         if lambd is None:
             if self.lambd is None:
                 raise ValueError('No specification of regularization parameter')
@@ -55,7 +57,7 @@ class RidgeRegressor:
         self.K_inv = (self.v * w) @ self.v.T
 
     def __call__(self, x_test):
-        """Neighbor computation.
+        """Weighting scheme computation.
 
         Parameters
         ----------
@@ -89,7 +91,7 @@ class Kernel:
     >>>> import numpy as np
     >>>> x_support = np.random.randn(50, 10)
     >>>> kernel_computer = Kernel('Gaussian', sigma=3)
-    >>>> kernel_computer.set_support(x_support, subsample_rate=.1)
+    >>>> kernel_computer.set_support(x_support)
     >>>> x = np.random.randn(30, 10)
     >>>> k = kernel_computer(x)
     """
@@ -102,19 +104,16 @@ class Kernel:
             self.sigma = kwargs['sigma']
         self._call_method = getattr(self, self.kernel + '_kernel')
 
-    def set_support(self, x, subsample_rate=0):
+    def set_support(self, x):
         """Set train support for kernel method.
 
         Parameters
         ----------
         x : ndarray
             Training set given as a design matrix, of shape (nb_points, input_dim).
-        subsample_rate : float, optional, default to 0
-            Subsampling rate to compute kernel methods on a subsets of points.
         """
         self.reset()
-        self.ind = np.random.rand(x.shape[0]) >= subsample_rate
-        self.x = x[self.ind]
+        self.x = x
 
     def __call__(self, x):
         """Kernel computation.
@@ -187,7 +186,7 @@ if __name__=="__main__":
     kernel_computer = Kernel('Gaussian', sigma=3)
     krr = RidgeRegressor(kernel_computer, lambd=1e-3)
     x_support = np.random.randn(50, 10)
-    krr.set_support(x_support, subsample_rate=0)
+    krr.set_support(x_support)
     x = np.random.randn(30, 10)
     alpha = krr(x)
     assert(alpha.shape==(30,50))
