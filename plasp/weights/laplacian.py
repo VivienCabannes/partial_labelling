@@ -106,9 +106,10 @@ class Diffusion:
 
             if self.nl is None:
                 self.A = ST.T @ ST
+                self.A /= self.n_train
             else:
-                self.A = ST.T[..., :nl] @ ST[:nl]
-                self.A /= nl
+                self.A = ST.T[..., :self.nl] @ ST[:self.nl]
+                self.A /= self.nl
 
             self.B_0 = TZ @ TZ.T
             self.B_0 /= self.n_train
@@ -122,13 +123,13 @@ class Diffusion:
                 self.A = SS[:self.p, ...] @ SS[..., :self.p]
                 self.A /= self.n_train
             else:
-                self.A = SS[:self.p, :nl] @ SS[:nl, :self.p]
-                self.A /= nl
+                self.A = SS[:self.p, :self.nl] @ SS[:self.nl, :self.p]
+                self.A /= self.nl
 
             self.B_0 = SZ[:self.p] @ SZ[:self.p].T
             self.B_0 /= self.n_train
 
-    def update_mu(self, mu=None, mu_numerical=10e-15):
+    def update_mu(self, mu=None, mu_numerical=10e-15, Tikhonov=False):
         """Setting GSVD regularization parameter"""
 
         if not hasattr(self, 'B_0'):
@@ -140,12 +141,14 @@ class Diffusion:
             raise valueError('GSVD regularization has not been specified.')
 
         if self.full:
-            self.B = self.B_0 + mu * self.kernel.TT
+            self.B = self.B_0 + self.mu * self.kernel.TT
+            self.B += mu_numerical * np.eye(self.B.shape[0])
+        else:
+            self.B = self.B_0 + self.mu * self.kernel.K[:self.p,:self.p]
             self.B += mu_numerical * np.eye(self.B.shape[0])
 
-        else:
-            self.B = self.B_0 + mu * self.kernel.K[:self.p,:self.p]
-            self.B += mu_numerical * np.eye(self.B.shape[0])
+        if Tikhonov:
+            self.Tikhonov = True
 
         # compute GSVD once and try many filter functions after
         if not self.Tikhonov:
@@ -204,13 +207,13 @@ class Diffusion:
         Returns
         -------
         out : ndarray
-            Similarity matrix of size (n_train, nb_points) given by kernel Laplacian regularization.
+            Similarity matrix of size (nb_points, n_train) given by kernel Laplacian regularization.
         """
         if not hasattr(self, 'c'):
             self.update_psi()
 
         if self.full:
-            T_x = self.kernel.get_TS(x_test).T
+            T_x = self.kernel.get_ST(x_test)
             return T_x @ self.c
         else:
             K_x = self.kernel.get_SS(x_test)[:self.p]
@@ -275,26 +278,27 @@ class GaussianKernel:
         Returns
         -------
         SZ: ndarray
-            Array of size (n_train, d * nb_points) or (n_train, nb_points, d)
+            Array of size (nb_points, d * n_train) or (nb_points, n_train, d)
             SZ[i, j*m] = :math:`\partial_{1,m}` k(x_train[j], x[i])
         """
         if x is None:
             x = self.x
         if SS is None:
-            SS = self.get_SS(x)
+            SS = self.get_SS(x).T
 
         SZ = np.tile(SS[...,np.newaxis], (1, 1, self.x.shape[1]))
-        # diff[i,j,k] = self.x[i,k] - x[j,k]
-        diff = self.x[:, np.newaxis, :] - x[np.newaxis, ...]
+        # diff[i,j,k] = x[i,k] - self.x[j,k]
+        diff = x[:, np.newaxis, :] - self.x[np.newaxis, ...]
         diff /= self.sigma**2
+        # SZ[i, j, k] = (x[i, k] - self.x[j, k]) * k(x[i], self.x[j])
         SZ *= diff
 
         if reshape:
-            # return SZ.reshape(self.n_train, -1, order='F') # slower than the following
             n, d = x.shape
-            SZ_reshape = np.empty((self.n_train, n*d), SZ.dtype)
+            # return SZ.reshape(n, -1, order='F') # slower than the following
+            SZ_reshape = np.empty((n, self.n_train*d), SZ.dtype)
             for i in range(d):
-                SZ_reshape[:, i*n:(i+1)*n] = SZ[..., i]
+                SZ_reshape[:, i*self.n_train:(i+1)*self.n_train] = SZ[..., i]
             return SZ_reshape
         return SZ
 
@@ -313,19 +317,20 @@ class GaussianKernel:
         if x is None:
             x = self.x
         if SS is None:
-            SS = self.get_SS(x)
+            SS = self.get_SS(x).T
         if SZ is None:
-            SZ = self.get_SZ(x, SS)
+            SZ = self.get_SZ(x, SS=SS)
         n, d = x.shape
-        ST = np.zeros((self.n_train, n*(d+1)), dtype=np.float)
-        ST[:, :n] = SS
-        ST[:, n:] = SZ
+        ST = np.zeros((n, self.n_train*(d+1)), dtype=np.float)
+        ST[:, :self.n_train] = SS
+        ST[:, self.n_train:] = SZ
         return ST
 
     def set_ST(self):
         if not hasattr(self, 'ST'):
             self.set_SZ()
             self.ST = self.get_ST(SS=self.K, SZ=self.SZ)
+
 
     def get_ZZ(self, x=None, SS=None, reshape=True):
         """Double derivative of the Gaussian kernel
@@ -334,17 +339,17 @@ class GaussianKernel:
         -------
         ZZ: ndarray
             Array of size (n_train * d, nb_points * d) or (n_train, nb_points, d, d)
-            ZZ[i*k, j*m] = :math:`\partial_{1,k}\partial_{2,m}` k(x_train[j], x[i])
+            ZZ[i*k, j*m] = :math:`\partial_{1,k}\partial_{2,m}` k(x[i], x_train[j])
         """
         if x is None:
             x = self.x
         if SS is None:
-            SS = get_SS(x)
+            SS = self.get_SS(x).T
         n, d = x.shape
         ZZ = np.tile(SS[...,np.newaxis, np.newaxis], (1, 1, d, d,))
-        # diff[i,j,k] = self.x[i,k] - x[j,k]
-        diff = self.x[:, np.newaxis, :] - x[np.newaxis, ...]
-        # prod_diff[i,j,k,l] = diff[i,j,l]*diff[i,j,k] = (self.x[i,l] - x[j,l]) * (self.x[i,k] - x[j,k])
+        # diff[i,j,k] = x[i,k] - self.x[j,k]
+        diff = x[:, np.newaxis, :] - self.x[np.newaxis, ...]
+        # prod_diff[i,j,k,l] = diff[i,j,l]*diff[i,j,k] = (x[i,l] - self.x[j,l]) * (x[i,k] - self.x[j,k])
         prod_diff = diff[:,:, np.newaxis, :]*diff[:,:,:,np.newaxis]
         prod_diff /= self.sigma**4
         prod_diff *= -1
@@ -352,14 +357,13 @@ class GaussianKernel:
             prod_diff[:, :, i, i] += 1 / (self.sigma**2)
         ZZ *= prod_diff
         if reshape:
-            # return ZZ.transpose((0, 2, 1, 3)).reshape(self.n_train * d, n * d, order='F') # slower
-            ZZ_reshape = np.empty((self.n_train*d, n*d), ZZ.dtype)
+            # return ZZ.transpose((0, 2, 1, 3)).reshape(n * d, self.n_train * d, order='F') # slower
+            ZZ_reshape = np.empty((n*d, self.n_train*d), ZZ.dtype)
             for i in range(d):
-
                 for j in range(i):
-                    ZZ_reshape[self.n_train*i:self.n_train*(i+1), n*j:n*(j+1)] = ZZ[..., i, j]
-                    ZZ_reshape[self.n_train*j:self.n_train*(j+1), n*i:n*(i+1)] = ZZ[..., j, i]
-                ZZ_reshape[self.n_train*i:self.n_train*(i+1), n*i:n*(i+1)] = ZZ[..., i, i]
+                    ZZ_reshape[n*i:n*(i+1), self.n_train*j:self.n_train*(j+1)] = ZZ[..., i, j]
+                    ZZ_reshape[n*j:n*(j+1), self.n_train*i:self.n_train*(i+1)] = ZZ[..., j, i]
+                ZZ_reshape[n*i:n*(i+1), self.n_train*i:self.n_train*(i+1)] = ZZ[..., i, i]
             return ZZ_reshape
         return ZZ
 
@@ -372,15 +376,15 @@ class GaussianKernel:
         if x is None:
             x = self.x
         if SS is None:
-            SS = get_SS(x)
+            SS = self.get_SS(x).T
         if SZ is None:
-            SZ = get_SZ(x, SS)
+            SZ = self.get_SZ(x, SS)
         if ZZ is None:
-            ZZ = get_ZZ(x, SS)
+            ZZ = self.get_ZZ(x, SS)
         n, d = x.shape
-        TZ = np.zeros((self.n_train*(d+1), n*d), dtype=np.float)
-        TZ[:self.n_train,:] = SZ
-        TZ[self.n_train:,:] = ZZ
+        TZ = np.zeros((n*(d+1), self.n_train*d), dtype=np.float)
+        TZ[:n,:] = SZ
+        TZ[n:,:] = ZZ
         return TZ
 
     def set_TZ(self):
@@ -393,18 +397,20 @@ class GaussianKernel:
     def get_TT(self, x=None, SS=None, SZ=None, ZZ=None):
         if x is None:
             x = self.x
+        else:
+            raise NotImplementedError('Implementation was not finished for TT')
         if SS is None:
-            SS = get_SS(x)
+            SS = self.get_SS(x).T
         if SZ is None:
-            SZ = get_SZ(x)
+            SZ = self.get_SZ(x)
         if ZZ is None:
-            ZZ = get_ZZ(x)
+            ZZ = self.get_ZZ(x)
         n, d = x.shape
-        TT = np.zeros((self.n_train*(d+1), n*(d+1)), dtype=np.float)
-        TT[:self.n_train, :n] = SS
-        TT[:self.n_train, n:] = SZ
-        TT[self.n_train:, :n] = SZ.T
-        TT[self.n_train:, n:] = ZZ
+        TT = np.zeros((n*(d+1), self.n_train*(d+1)), dtype=np.float)
+        TT[:n, :self.n_train] = SS
+        TT[:n, self.n_train:] = SZ
+        TT[n:, :self.n_train] = SZ.T
+        TT[n:, self.n_train:] = ZZ
         return TT
 
     def set_TT(self):
@@ -414,51 +420,6 @@ class GaussianKernel:
             self.set_ZZ()
             self.TT = self.get_TT(SS=self.K, SZ=self.SZ, ZZ=self.ZZ)
 
-    def get_ZS(self, x=None, SS=None, reshape=True):
-        """First derivative of the Gaussian kernel
-
-        Returns
-        -------
-        ZS: ndarray
-            Array of size (d * n_train, nb_points) or (nb_points, n_train, d)
-            ZS[i, j*m] = :math:`\partial_{1,m}` k(x_train[j], x[i])
-        """
-        if x is None:
-            x = self.x
-        if SS is None:
-            SS = self.get_SS(x)
-
-        ZS = np.tile(SS.T[...,np.newaxis], (1, 1, self.x.shape[1]))
-        # diff[i,j,k] = x[i,k] - self.x[j,k]
-        diff = x[:, np.newaxis, :] - self.x[np.newaxis, ...]
-        diff /= self.sigma**2
-        ZS *= diff
-
-        if reshape:
-            n, d = x.shape
-            ZS_reshape = np.empty((self.n_train*d, n), ZS.dtype)
-            for i in range(d):
-                ZS_reshape[i*self.n_train:(i+1)*self.n_train] = ZS[..., i].T
-            return ZS_reshape
-        return ZS
-
-    def get_TS(self, x=None, SS=None, ZS=None):
-        """Matrix based on derivatives of the Gaussian kernel
-
-        Based on T = [S, Z].
-        """
-        if x is None:
-            x = self.x
-        if SS is None:
-            SS = self.get_SS(x)
-        if ZS is None:
-            ZS = self.get_ZS(x, SS)
-        n, d = x.shape
-        TS = np.zeros((self.n_train*(d+1), n), dtype=np.float)
-        TS[:self.n_train] = SS
-        TS[self.n_train:] = ZS
-        return TS
- 
     def reset(self):
         """Resetting attributes."""
         atts = ['_attr_1', 'K', 'SZ', 'ST', 'ZZ', 'TZ', 'TT']
@@ -469,9 +430,9 @@ class GaussianKernel:
 
 if __name__=="__main__":
     x_support = np.random.randn(50, 10)
-    lap = Diffusion(full=True)
+    lap = Diffusion()
     lap.set_support(x_support)
-    # lap.update_sigma(1, p=20)
+    lap.update_sigma(1, p=20)
     lap.update_sigma(1)
     lap.update_mu(1 / len(x_support))
     lap.update_psi(lambd=1e-3)

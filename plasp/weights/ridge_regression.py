@@ -6,19 +6,26 @@ class RidgeRegressor:
     """
     Regression weights of kernel Ridge regression
 
+    Parameters
+    ----------
+    kernel : {'gaussian'}
+        Name of the kernel to use.
+    sigma : float, optional
+        Bandwidth parameter for various kernel: standard deviation for Gaussian kernel.
+    lambd: float, optional
+        Tikhonov regularization parameter
 
     Examples
     --------
     >>>> import numpy as np
-    >>>> kernel_computer = Kernel('Gaussian', sigma=3)
-    >>>> krr = RidgeRegressor(kernel_computer, lambd=1e-3)
+    >>>> krr = RidgeRegressor('Gaussian', sigma=3, lambd=1e-3)
     >>>> x_support = np.random.randn(50, 10)
     >>>> krr.set_support(x_support)
     >>>> x = np.random.randn(30, 10)
     >>>> alpha = krr(x)
     """
-    def __init__(self, kernel, lambd=None):
-        self.kernel = kernel
+    def __init__(self, kernel, lambd=None, **kwargs):
+        self.kernel = Kernel(kernel, **kwargs)
         self.lambd = lambd
 
     def set_support(self, x_train):
@@ -67,7 +74,7 @@ class RidgeRegressor:
         Returns
         -------
         out : ndarray
-            Similarity matrix of size (n_train, nb_points) given by kernel ridge regression.
+            Similarity matrix of size (nb_points, n_train) given by kernel ridge regression.
         """
         if not hasattr(self, 'K_inv'):
             self.update_lambda()
@@ -183,8 +190,7 @@ class Kernel:
 
 
 if __name__=="__main__":
-    kernel_computer = Kernel('Gaussian', sigma=3)
-    krr = RidgeRegressor(kernel_computer, lambd=1e-3)
+    krr = RidgeRegressor('Gaussian', sigma=3, lambd=1e-3)
     x_support = np.random.randn(50, 10)
     krr.set_support(x_support)
     x = np.random.randn(30, 10)
