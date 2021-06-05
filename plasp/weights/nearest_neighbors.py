@@ -66,6 +66,17 @@ class NearestNeighbors:
         alpha = dist < np.partition(dist, self.k)[:, self.k:self.k+1]
         return alpha.astype(np.float)
 
+    def train(self):
+        pass
+
+    def set_phi(self, phi):
+        self.phi = phi
+
+    def call_with_phi(self, x):
+        alpha = self(x)
+        beta = alpha @ self.phi
+        return beta
+
 
 if __name__=="__main__":
     nn = NearestNeighbors(k=20)

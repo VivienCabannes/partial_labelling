@@ -77,9 +77,20 @@ class RidgeRegressor:
             Similarity matrix of size (nb_points, n_train) given by kernel ridge regression.
         """
         if not hasattr(self, 'K_inv'):
-            self.update_lambda()
+            self.train()
         K_x = self.kernel(x_test)
         return K_x.T @ self.K_inv
+
+    def train(self, sigma=None, lambd=None):
+        self.update_sigma(sigma)
+        self.update_lambda(lambd)
+
+    def set_phi(self, phi):
+        self.c_beta = self.K_inv @ phi
+
+    def call_with_phi(self, x):
+        K_x = self.kernel(x)
+        return K_x.T @ self.c_beta
 
 
 class Kernel:

@@ -129,7 +129,7 @@ class Diffusion:
             self.B_0 = SZ[:self.p] @ SZ[:self.p].T
             self.B_0 /= self.n_train
 
-    def update_mu(self, mu=None, mu_numerical=10e-15, Tikhonov=False):
+    def update_mu(self, mu=None, mu_numerical=10e-7, Tikhonov=False):
         """Setting GSVD regularization parameter"""
 
         if not hasattr(self, 'B_0'):
@@ -138,7 +138,7 @@ class Diffusion:
         if mu is not None:
             self.mu = mu
         if self.mu is None:
-            raise valueError('GSVD regularization has not been specified.')
+            raise ValueError('GSVD regularization has not been specified.')
 
         if self.full:
             self.B = self.B_0 + self.mu * self.kernel.TT
@@ -210,7 +210,7 @@ class Diffusion:
             Similarity matrix of size (nb_points, n_train) given by kernel Laplacian regularization.
         """
         if not hasattr(self, 'c'):
-            self.update_psi()
+            self.train()
 
         if self.full:
             T_x = self.kernel.get_ST(x_test)
@@ -218,6 +218,25 @@ class Diffusion:
         else:
             K_x = self.kernel.get_SS(x_test)[:self.p]
             return K_x.T @ self.c
+
+    def train(self, sigma=None, full=None, p=None, n_cov=None, nl=None,
+              mu=None, psi=None, lambd=None):
+        self.update_sigma(sigma=sigma, full=full, p=p, nl=n_cov)
+        if lambd is not None:
+            self.Tikhonov = True
+        self.update_mu(mu=mu)
+        self.update_psi(nl=nl, psi=psi, lambd=lambd)
+
+    def set_phi(self, phi):
+        self.c_beta = self.c @ phi
+
+    def call_with_phi(self, x):
+        if self.full:
+            T_x = self.kernel.get_ST(x)
+            return T_x @ self.c_beta
+        else:
+            K_x = self.kernel.get_SS(x)[:self.p]
+            return K_x.T @ self.c_beta
 
 
 class GaussianKernel:
