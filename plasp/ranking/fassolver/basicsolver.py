@@ -19,7 +19,7 @@ def _insert_const(item, scores, rank_pl, visited, const_pl, range_pl):
     rank_pl[visited.sum()] = item
     visited[item] = True
 
-    
+
 @numba.jit('(i8[::1], f8[::1], f8[::1], f8[::1], b1[::1], i8[::1],'\
             'f8[:,::1], b1[:,::1], i8[:,::1], i8[::1])', nopython=True)
 def _incorporate_const_out(rank, scores, const, out, visited, rank_pl, 
@@ -34,12 +34,12 @@ def _incorporate_const_out(rank, scores, const, out, visited, rank_pl,
         _insert_const(item, scores, rank_pl, visited, const_pl, range_pl)
     fill_emb_from_rank(rank_pl, out, ind_map)
 
-    
+
 class BasicFasSolver(FasSolver):
     def __init__(self, ind_map):
         self.ind_map = ind_map
         self.IL_met = 'pre_solve'
-        
+
         # Placeholders
         m = len(ind_map)
         self.sym_pl = np.empty((m, m), dtype=np.float)
@@ -48,7 +48,7 @@ class BasicFasSolver(FasSolver):
         self.range_pl = np.arange(m)
         self.rank_pl = np.empty(m, dtype=np.int)
         self.visited = np.empty(m, dtype=np.bool_)
-   
+
     def solve_out(self, c, out):
         fill_sym_emb(c, self.sym_pl, self.ind_map)
         np.sum(self.sym_pl, axis=1, out=self.score_pl) 
@@ -64,7 +64,7 @@ class BasicFasSolver(FasSolver):
         First pass to solve the minimum feedback arc set problem reading:
            argmin_e <e, c>
         Subject to constraint not defined yet.
-        
+
         This function allows to solve efficiently a big number of 
         instance with the same objective but different constraint.
         This is useful for the infimum loss.
@@ -74,13 +74,13 @@ class BasicFasSolver(FasSolver):
         scores *= -1
         rank = scores.argsort()
         return rank, scores
-        
+
     def incorporate_const_out(self, pre_sol, const, out):
         rank, scores = pre_sol
         _incorporate_const_out(rank, scores, const, out, 
             self.visited, self.rank_pl, self.sym_pl, 
             self.const_pl, self.ind_map, self.range_pl)
-        
+
 #     def define_const(self, const):
 #         raise NotImplementedError
 

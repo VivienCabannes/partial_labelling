@@ -4,37 +4,37 @@ from .fassolver import IlpSolver
 
 
 class DF:
-    def __init__(self, kernel, fas_solver):
-        self.kernel = kernel
+    def __init__(self, computer, fas_solver):
+        self.computer = computer
         self.solver = fas_solver
         self.is_ilp = type(self.solver) == IlpSolver
 
-    def train(self, x_train, S_train, lambd, threshold=1e-3, nb_epochs=1, solver=None, quadratic=False, method='FW'):
+    def train(self, x_train, S_train, threshold=1e-3, nb_epochs=1, solver=None, quadratic=False, method='FW', **kwargs):
         if solver is None:
+            if self.solver is None:
+                raise ValueError('FAS solver has not been specified.')
             solver = self.solver
-        n_train = len(S_train)
 
-        self.kernel.set_support(x_train)
-        K = self.kernel.get_k()
-        w, v = np.linalg.eigh(K)
-        w_reg = w / (w + n_train * lambd)
-        alpha = (w_reg * v) @ v.T
+        self.computer.set_support(x_train)
+        self.computer.train(**kwargs)
+        alpha = self.computer(x_train)
 
         if quadratic:
             alpha = alpha.T @ alpha
-            self.y_train = self.quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver)
+            phi = self.quadratic_disambiguation(alpha, S_train, method, nb_epochs, solver)
         else:
-            self.y_train = self.disambiguation(alpha, S_train, threshold, solver)
-        self.beta = v / (w + n_train * lambd) @ (v.T @ self.y_train)
+            phi = self.disambiguation(alpha, S_train, threshold, solver)
+
+        self.computer.set_phi(phi)
 
     def __call__(self, x, verbose=False):
-        out = self.kernel(x).T @ self.beta
+        out = self.computer.call_with_phi(x)
         out *= -1
         for i in range(len(x)):
             if self.is_ilp:
                 # To stabilize CPLEX
-                out[i] /= out[i].max()
-                out[i] *= 1e5
+                out[i] /= np.abs(out[i]).max()
+                out[i] *= 1e3
                 # ------------------
                 self.solver.set_objective(out[i])
                 out[i] = self.solver.solve()

@@ -82,7 +82,7 @@ def fill_sym_emb(emb, sym_emb, ind_map):
             sym_emb[i, j] = emb[ind]
             sym_emb[j, i] = -emb[ind]
 
-            
+
 def get_sym_embs(embs, ind_map):
     m = len(ind_map)
     sym_embs = np.zeros((len(embs), m, m), dtype=np.float64)
