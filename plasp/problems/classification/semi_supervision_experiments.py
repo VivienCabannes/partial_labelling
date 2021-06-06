@@ -12,11 +12,11 @@ from weights import Diffusion
 
 
 np.random.seed(0)
-# plt.rcParams['text.latex.preamble'] = [r'\usepackage{newtxmath}'] 
-# plt.rcParams['text.usetex'] = True
-# plt.rcParams["font.family"] = "serif"
-# plt.rcParams["font.serif"] = "Times"
-# plt.rc('text', usetex=True)
+plt.rcParams['text.latex.preamble'] = [r'\usepackage{newtxmath}'] 
+plt.rcParams['text.usetex'] = True
+plt.rcParams["font.family"] = "serif"
+plt.rcParams["font.serif"] = "Times"
+plt.rc('text', usetex=True)
 
 
 def get_trainset(nb):
