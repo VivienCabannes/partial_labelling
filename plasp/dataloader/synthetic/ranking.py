@@ -21,7 +21,7 @@ class RKSynthesizer:
         self.m_emb = (m*(m-1))//2
         self.ind_map = canonical_map(m)
         self.instanciate()
-        
+
     def instanciate(self):
         a = np.random.randn(self.m)
         b = np.random.randn(self.m)
@@ -30,7 +30,7 @@ class RKSynthesizer:
             b[:] = [.75, .5, .5, .75]
         self.a = a[:, np.newaxis]
         self.b = b[:, np.newaxis]
-        
+
     def f(self, x, verbose=False):
         y_score = self.a @ x[np.newaxis, :] + self.b
         y = np.zeros((len(x), self.m_emb), dtype=np.float64)
@@ -70,8 +70,7 @@ class RKSynthesizer:
 #             ind_lost = dist < corruption_rate
             S_train[ind_lost] = 0
         return S_train
-    
-    
+
     @staticmethod
     @numba.jit("(f8[:, :], f8[:, :], i8[:, :])", nopython=True)
     def fill_y(y_train, y_score, ind_map):

@@ -16,8 +16,15 @@ class IL:
     See the paper:
     Structured Prediction with Partial Labelling through the Infimum Loss
     """
-    def __init__(self, computer):
-        self.computer = computer
+    def __init__(self, weight_computer):
+        """
+
+        Parameters
+        ----------
+        weight_computer: WeightComputer object
+            Computer to compute similarity metric
+        """
+        self.computer = weight_computer
 
     def train(self, x_train, S_train, **kwargs):
         self.computer.set_support(x_train)
