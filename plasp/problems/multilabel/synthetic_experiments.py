@@ -1,5 +1,5 @@
 """
-TODO: Put this example in the synthetizer folder of dataloader
+Depreciated
 """
 
 import numba
@@ -36,7 +36,7 @@ def get_problem(n_train, n_test):
     x_test[:, 0] = mesh[0].flatten()
     x_test[:, 1] = mesh[1].flatten()
     y_test = f(x_test)
-    
+
     y_grid = np.zeros((32, 5), dtype=np.int8)
     for i in range(32):
         tmp = np.base_repr(i, 2)
@@ -62,32 +62,29 @@ def plot_problem(x, y, ax=None):
     else:
         ax.scatter(x[:, 0], x[:, 1], c=c.transpose())
 
-        
-def get_alphas(x_train, c_train, R, x_test, c_sigmas, c_lambdas, KernelComputer):
+
+def get_alphas(x_train, x_test, c_sigmas, c_lambdas, regressor):
     n_train, dim = x_train.shape
+    # regressor = RigdeRegressor
+    computer = regressor('Gaussian', sigma=None)
+    computer.set_support(x_train)
 
     alphas = []
     for c_sigma in c_sigmas:
         tmp = []
         sigma = c_sigma * dim
-        kernel = KernelComputer('Gaussian', sigma=sigma)
-        kernel.set_support(x_train)
+        computer.update_sigma(sigma)
         K = kernel.get_k()
         w_0, v = np.linalg.eigh(K)
 
         for c_lambda in c_lambdas:
             lambd = c_lambda / np.sqrt(n_train)
-            w = w_0 + n_train * lambd
-            w **= -1
-            K_inv = (v * w) @ v.T
-
-            K_x = kernel(x_test)
-            alpha = K_x.T @ K_inv
+            computer.update_lambda(lambd)
+            alpha = computer(x_test)
             tmp.append(alpha)
         alphas.append(tmp)
-        
-    return alphas
 
+    return alphas
 
 @numba.jit(nopython=True)
 def Hamming_loss(A, B):
