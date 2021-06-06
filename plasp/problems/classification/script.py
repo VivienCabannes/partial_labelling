@@ -9,7 +9,7 @@ import numpy as np
 sys.path.append(os.path.join('..', '..'))
 from weights import RidgeRegressor, Diffusion
 from dataloader import LIBSVMLoader, FoldsGenerator
-from problems.classification.disambiguation import DF
+from problems.classification import DF
 
 
 np.random.seed(0)

@@ -17,6 +17,8 @@ np.random.seed(0)
 # plt.rcParams['font.serif'] = 'Times'
 
 
+## Show setting in a simple setup
+
 def show_setting(x, y, y_score, ind_map):
     fig1, ax1 = plt.subplots(1, 1, figsize=(2.5, 1.75))
     fig2, ax2 = plt.subplots(1, 1, figsize=(2.5, 1.75))
@@ -146,7 +148,8 @@ y_df = met_df(x_test[:, np.newaxis], verbose=False)
 fig = show_reconstruction(x_test, y_il, y_ac, y_df, 'IL', 'AC', 'DF', ind_map)
 fig.savefig(os.path.join('savings', 'reconstruction.pdf'))
 
-## Varying corruptions
+## Varying corruptions in a more complex setup
+
 m = 10
 n_train = 20
 n_test = 50

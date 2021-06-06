@@ -10,7 +10,11 @@ from weights import RidgeRegressor, Diffusion
 from dataloader import MULANLoader, FoldsGenerator
 from problems.multilabel import DF, IL
 
+
 np.random.seed(0)
+# plt.rcParams['text.usetex'] = True
+# plt.rcParams['font.family'] = 'serif'
+# plt.rcParams['font.serif'] = 'Times'
 
 names = MULANLoader.datasets
 names = ['birds', 'CAL500', 'emotions', 'flags', 'genbase', 'medical', 'scene']
