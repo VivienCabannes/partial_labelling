@@ -48,9 +48,10 @@ class IL(Variational):
 
 
 if __name__=="__main__":
+    import os
     import sys
 
-    sys.path.append('..')
+    sys.path.append(os.path.join('..', '..'))
     from weights import RidgeRegressor, Diffusion
     from dataloader import LIBSVMLoader, FoldsGenerator
 
