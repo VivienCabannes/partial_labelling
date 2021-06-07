@@ -1,5 +1,15 @@
+# Python and jupyter cache
+*__pycache__*
 *.ipynb_checkpoints*
+
+# Figure savings
 */savings/*
 *.pdf
-*__pycache__*
+
+# Multiprocessing
 */dask-worker-space
+
+# Packaging
+*.egg-info/
+build/
+dist/
