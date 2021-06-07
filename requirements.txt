@@ -1,0 +1,15 @@
+cplex #useful for ranking
+matplotlib
+numba
+numpy
+# To load LIBSVM and MULAN datasets
+liac-arff
+scikit-learn
+scikit-multilearn
+# # For server and multiprocessing
+# dask-jobqueue
+# distributed
+# requests
+# # Interactive notebooks
+# ipywidgets
+# jupyter

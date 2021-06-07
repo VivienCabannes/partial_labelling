@@ -1,4 +1,5 @@
 *.ipynb_checkpoints*
+*/savings/*
 *.pdf
 *__pycache__*
 */dask-worker-space

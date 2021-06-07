@@ -30,5 +30,5 @@ class IRSynthesizer:
             c_train = labels + np.abs(mu)[:, np.newaxis] * np.sign(labels)
         else:
             mu = (2 * np.random.rand(self.n_train) - 1) * r_train
-            c_train = labels + mu[:, np.newaxis]        
+            c_train = labels + mu[:, np.newaxis]
         return c_train, r_train
