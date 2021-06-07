@@ -1,7 +1,7 @@
 """
 Generic implementations for a problem specified by a loss
 
-... math: \ell(y, z) = -\psi(z)^\top\phi(y)
+.. math:: \ell(y, z) = -\psi(z)^\top\phi(y)
 
 See Also
 --------

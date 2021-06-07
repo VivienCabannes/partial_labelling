@@ -7,7 +7,18 @@ Partial Labelling Approached with through Structured Prediction (PLASP)
 
 Installation
 ------------
-To install our package, run the setup file
+From wheel
+~~~~~~~~~~
+You can download our package from its pypi repository.
+
+.. code:: shell
+
+   $ pip install plasp
+
+From source
+~~~~~~~~~~~
+You can download source code at https://github.com/VivienCabannes/partial_labelling/archive/master.zip.
+Once download, our packages can be install through the following command.
 
 .. code:: shell
 
@@ -54,7 +65,7 @@ Datasets can be download at:
  - LIBSVM: https://www.csie.ntu.edu.tw/~cjlin/libsvm/oldfiles/index-1.0.html
  - MULAN: http://mulan.sourceforge.net/datasets-mlc.html
 
-Change path in config file dataloader/config.py to specify path to your data.
+Change path in config file ``dataloader/config.py`` to specify path to your data.
 
 References
 ----------
