@@ -17,12 +17,12 @@ class RidgeRegressor:
 
     Examples
     --------
-    >>>> import numpy as np
-    >>>> krr = RidgeRegressor('Gaussian', sigma=3, lambd=1e-3)
-    >>>> x_support = np.random.randn(50, 10)
-    >>>> krr.set_support(x_support)
-    >>>> x = np.random.randn(30, 10)
-    >>>> alpha = krr(x)
+    >>> import numpy as np
+    >>> krr = RidgeRegressor('Gaussian', sigma=3, lambd=1e-3)
+    >>> x_support = np.random.randn(50, 10)
+    >>> krr.set_support(x_support)
+    >>> x = np.random.randn(30, 10)
+    >>> alpha = krr(x)
     """
     def __init__(self, kernel, lambd=None, **kwargs):
         self.kernel = Kernel(kernel, **kwargs)
@@ -106,12 +106,12 @@ class Kernel:
 
     Examples
     --------
-    >>>> import numpy as np
-    >>>> x_support = np.random.randn(50, 10)
-    >>>> kernel_computer = Kernel('Gaussian', sigma=3)
-    >>>> kernel_computer.set_support(x_support)
-    >>>> x = np.random.randn(30, 10)
-    >>>> k = kernel_computer(x)
+    >>> import numpy as np
+    >>> x_support = np.random.randn(50, 10)
+    >>> kernel_computer = Kernel('Gaussian', sigma=3)
+    >>> kernel_computer.set_support(x_support)
+    >>> x = np.random.randn(30, 10)
+    >>> k = kernel_computer(x)
     """
 
     def __init__(self, kernel, **kwargs):

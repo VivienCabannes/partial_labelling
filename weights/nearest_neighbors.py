@@ -12,12 +12,12 @@ class NearestNeighbors:
 
     Examples
     --------
-    >>>> import numpy as np
-    >>>> nn = NearestNeighbors(k=20)
-    >>>> x_support = np.random.randn(50, 10)
-    >>>> nn.set_support(x_support)
-    >>>> x = np.random.randn(30, 10)
-    >>>> alpha = nn(x)
+    >>> import numpy as np
+    >>> nn = NearestNeighbors(k=20)
+    >>> x_support = np.random.randn(50, 10)
+    >>> nn.set_support(x_support)
+    >>> x = np.random.randn(30, 10)
+    >>> alpha = nn(x)
     """
 
     def __init__(self, k):

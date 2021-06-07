@@ -14,15 +14,15 @@ class Diffusion:
 
     Examples
     --------
-    >>>> import numpy as np
-    >>>> x_support = np.random.randn(50, 10)
-    >>>> lap = Diffusion()
-    >>>> lap.set_support(x_support)
-    >>>> lap.update_sigma(1, p=20)
-    >>>> lap.update_mu(1 / len(x_support))
-    >>>> lap.update_psi(lambd=1e-3)
-    >>>> x = np.random.randn(30, 10)
-    >>>> alpha = lap(x)
+    >>> import numpy as np
+    >>> x_support = np.random.randn(50, 10)
+    >>> lap = Diffusion()
+    >>> lap.set_support(x_support)
+    >>> lap.update_sigma(1, p=20)
+    >>> lap.update_mu(1 / len(x_support))
+    >>> lap.update_psi(lambd=1e-3)
+    >>> x = np.random.randn(30, 10)
+    >>> alpha = lap(x)
     """
     def __init__(self, sigma=None, lambd=None, psi=None, mu=None,
                  p=None, full=False, nl=None):

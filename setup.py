@@ -9,8 +9,8 @@ setup(
     author='Vivien Cabannes',
     author_email='vivien.cabannes@gmail.com',
     packages=find_packages(),
-    url='https://github.com/VivienCabannes/plasp',
-    download_url='https://github.com/VivienCabannes/plasp/archive/master.zip',
+    url='https://github.com/VivienCabannes/partial_labelling',
+    download_url='https://github.com/VivienCabannes/partial_labelling/archive/master.zip',
     keywords='partial labeling weakly supervised learning plasp scalable'
     + 'method structured prediction'
 )
