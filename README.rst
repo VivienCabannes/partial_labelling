@@ -1,6 +1,6 @@
 Partial Labelling Approached with through Structured Prediction (PLASP)
 =======================================================================
-:Abstract: Generic implementations of weakly supervision algorithms
+:Topic: Generic implementations of weakly supervision algorithms
    developped in [CAB20]_, [CAB21a]_, [CAB21b]_.
 :Author: Vivien Cabannes
 :Version: 1.0.0 of 2021/06/07
