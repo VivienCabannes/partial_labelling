@@ -76,4 +76,4 @@ References
    Cabannes et al., *ICML*, 2021
 
 .. [CAB21b] Overcoming the curse of dimensionality with Laplacian regularization
-   in semi-supervised learning, Cabannes et al., *Preprint*, 2021
+   in semi-supervised learning, Cabannes et al., *NeurIPS*, 2021
