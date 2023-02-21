@@ -5,6 +5,8 @@ Partial Labelling Approached with through Structured Prediction (PLASP)
 :Author: Vivien Cabannes
 :Version: 1.0.0 of 2021/06/07
 
+WARNING: For a fast implementation of (continuous) Laplacian spectral embedding, see `https://github.com/VivienCabannes/laplacian`
+
 Installation
 ------------
 From wheel
