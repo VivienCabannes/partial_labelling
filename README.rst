@@ -69,6 +69,11 @@ Datasets can be download at:
 
 Change path in config file ``dataloader/config.py`` to specify path to your data.
 
+See Also
+--------
+A standalone package for fast computation of the Laplacian decomposition can be found at:
+https://github.com/VivienCabannes/laplacian
+
 References
 ----------
 .. [CAB20] Structured Prediction with Partial Labelling through the Infimum Loss,
